@@ -193,11 +193,33 @@ select distinct(transaction_status)
 from transactions;
 
 update transactions
-set currency = upper(currency)
+set currency = upper(currency);
 
+select distinct(gender) 
+from customers;
 
+update customers 
+set gender = "Unknown"
+where gender is null or gender = '';
 
+select * from customers;
 
+update customers 
+set marital_status = "Unknown"
+where marital_status is null or marital_status = '';
 
+update customers 
+set education_level = "Unknown"
+where education_level is null or education_level = '';
 
+select * from cards;
 
+update cards 
+set card_type = "Unknown"
+where card_type is null or card_type = '';
+
+update cards 
+set card_network = "Unknown"
+where card_network is null or card_network = '';
+
+select * from transactions;
