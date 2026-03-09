@@ -1,6 +1,6 @@
-💳 Credit Card Customer & Transaction Analytics (Data Analyst Portfolio Project)
+Credit Card Customer & Transaction Analytics (Data Analyst Portfolio Project)
 
-📌 Project Overview
+Project Overview
 This project simulates a real-world credit card issuing company's data environment and demonstrates the full workflow of a data analyst working with messy financial data.
 The dataset contains 100,000+ synthetic records representing customers, credit cards, transactions, and payments. The data is intentionally dirty and uncleaned to mimic real-world datasets that analysts encounter in financial institutions.
 
