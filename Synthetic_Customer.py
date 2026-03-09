@@ -11,10 +11,37 @@ num_cards = 15000
 num_transactions = 70000
 num_payments = 10000
 
+# Helper function to save SQL file
+def save_sql(df, table_name, file_name):
+    with open(file_name, "w", encoding="utf-8") as f:
+        # CREATE TABLE statement
+        f.write(f"DROP TABLE IF EXISTS {table_name};\n")
+        f.write(f"CREATE TABLE {table_name} (\n")
+        for col in df.columns:
+            if df[col].dtype == "int64":
+                f.write(f"  {col} INT,\n")
+            elif df[col].dtype == "float64":
+                f.write(f"  {col} FLOAT,\n")
+            else:
+                f.write(f"  {col} VARCHAR(255),\n")
+        f.seek(f.tell()-2, 0)  # Remove last comma
+        f.write("\n);\n\n")
+        
+        # INSERT statements
+        for row in df.itertuples(index=False):
+            values = []
+            for v in row:
+                if pd.isnull(v):
+                    values.append("NULL")
+                elif isinstance(v, (int, float, np.integer, np.floating)):
+                    values.append(str(v))
+                else:
+                    values.append("'" + str(v).replace("'", "\\'") + "'")
+            f.write(f"INSERT INTO {table_name} VALUES ({', '.join(values)});\n")
+
 ############################
 # 1. CUSTOMERS TABLE
 ############################
-
 gender_options = ["Male","Female","male","FEMALE","M","F","Other","Unknown",""]
 marital_options = ["Single","Married","Divorced","single","MARRIED","S","D",""]
 education_options = ["High School","Graduate","Post Graduate","Doctorate",
@@ -25,51 +52,26 @@ employment_options = ["Employed","Self-employed","Unemployed","Retired",
 customers = []
 
 for i in range(num_customers):
-
     age = random.randint(18,80)
-
-    # outlier ages
     if random.random() < 0.02:
         age = random.randint(-5,120)
-
     income = random.randint(20000,200000)
-
-    # missing income
-    if random.random() < 0.05:
-        income = None
-
-    # negative income
-    if random.random() < 0.01:
-        income = random.randint(-10000,-1)
-
+    if random.random() < 0.05: income = None
+    if random.random() < 0.01: income = random.randint(-10000,-1)
     credit_score = random.randint(300,850)
-
-    # impossible credit score
-    if random.random() < 0.02:
-        credit_score = random.randint(900,1200)
-
+    if random.random() < 0.02: credit_score = random.randint(900,1200)
     date_val = fake.date_object()
-
     join_date = random.choice([
         date_val.strftime("%Y-%m-%d"),
         date_val.strftime("%d-%m-%Y"),
         date_val.strftime("%Y/%m/%d"),
         str(date_val)
     ])
-
     city = fake.city()
-
-    if random.random() < 0.3:
-        city = city.upper()
-
-    if random.random() < 0.2:
-        city = " " + city + " "
-
+    if random.random() < 0.3: city = city.upper()
+    if random.random() < 0.2: city = " " + city + " "
     email = fake.email()
-
-    if random.random() < 0.05:
-        email = fake.first_name()
-
+    if random.random() < 0.05: email = fake.first_name()
     customers.append({
         "customer_id": i+1,
         "first_name": fake.first_name(),
@@ -87,39 +89,26 @@ for i in range(num_customers):
         "join_date": join_date
     })
 
-customers_df = pd.DataFrame(customers)
-
-# duplicate rows
-customers_df = pd.concat([customers_df, customers_df.sample(200)])
-
-customers_df.to_csv("customers_dirty.csv", index=False)
+#customers_df = pd.DataFrame(customers)
+#customers_df = pd.concat([customers_df, customers_df.sample(200)])
+#customers_df.to_csv("customers_dirty.csv", index=False)
+#save_sql(customers_df, "customers", "customers_dirty.sql")
 
 ############################
-# 2️. CARDS TABLE
+# 2. CARDS TABLE
 ############################
-
 card_types = ["Silver","Gold","Platinum","silver","GOLD",""]
 networks = ["Visa","Mastercard","Amex","visa",""]
 
 cards = []
-
 for i in range(num_cards):
-
     credit_limit = random.randint(2000,20000)
-
-    # negative credit limit
-    if random.random() < 0.02:
-        credit_limit = -credit_limit
-
+    if random.random() < 0.02: credit_limit = -credit_limit
     available_credit = credit_limit - random.randint(0,5000)
-
-    # impossible available credit
-    if random.random() < 0.02:
-        available_credit = credit_limit + 5000
-
+    if random.random() < 0.02: available_credit = credit_limit + 5000
     cards.append({
         "card_id": i+1,
-        "customer_id": random.randint(1, num_customers + 500), # invalid FK possible
+        "customer_id": random.randint(1, num_customers + 500),
         "card_type": random.choice(card_types),
         "card_network": random.choice(networks),
         "card_number": fake.credit_card_number(),
@@ -132,33 +121,25 @@ for i in range(num_cards):
         "card_status": random.choice(["Active","Blocked","Closed","active",""]),
     })
 
-cards_df = pd.DataFrame(cards)
-
-cards_df = pd.concat([cards_df, cards_df.sample(200)])
-
-cards_df.to_csv("cards_dirty.csv", index=False)
+#cards_df = pd.DataFrame(cards)
+#cards_df = pd.concat([cards_df, cards_df.sample(200)])
+#cards_df.to_csv("cards_dirty.csv", index=False)
+#save_sql(cards_df, "cards", "cards_dirty.sql")
 
 ############################
-# 3️. TRANSACTIONS TABLE
+# 3. TRANSACTIONS TABLE
 ############################
-
 categories = ["Grocery","Travel","Dining","Fuel","Shopping","grocery",""]
 transaction_types = ["POS","Online","ATM","Contactless","online",""]
 status_options = ["Approved","Declined","approved",""]
 
 transactions = []
-
 for i in range(num_transactions):
-
     amount = round(random.uniform(5,2000),2)
-
-    # negative transactions
-    if random.random() < 0.02:
-        amount = -amount
-
+    if random.random() < 0.02: amount = -amount
     transactions.append({
         "transaction_id": i+1,
-        "card_id": random.randint(1,num_cards + 200), # invalid FK possible
+        "card_id": random.randint(1,num_cards + 200),
         "transaction_date": fake.date_time(),
         "transaction_amount": amount,
         "merchant_name": fake.company(),
@@ -172,28 +153,22 @@ for i in range(num_transactions):
     })
 
 transactions_df = pd.DataFrame(transactions)
-
 transactions_df = pd.concat([transactions_df, transactions_df.sample(500)])
-
 transactions_df.to_csv("transactions_dirty.csv", index=False)
+save_sql(transactions_df, "transactions", "transactions_dirty.sql")
 
 ############################
-# 4️. PAYMENTS TABLE
+# 4. PAYMENTS TABLE
 ############################
-
 payment_methods = ["Bank Transfer","Debit Card","ACH","bank transfer",""]
 
 payments = []
-
 for i in range(num_payments):
-
     statement_balance = random.randint(500,5000)
-
     payment_amount = random.randint(0,6000)
-
     payments.append({
         "payment_id": i+1,
-        "card_id": random.randint(1,num_cards + 300), # invalid FK possible
+        "card_id": random.randint(1,num_cards + 300),
         "billing_cycle_start": fake.date(),
         "billing_cycle_end": fake.date(),
         "statement_balance": statement_balance,
@@ -207,9 +182,8 @@ for i in range(num_payments):
     })
 
 payments_df = pd.DataFrame(payments)
-
 payments_df = pd.concat([payments_df, payments_df.sample(200)])
-
 payments_df.to_csv("payments_dirty.csv", index=False)
+save_sql(payments_df, "payments", "payments_dirty.sql")
 
-print("Dirty datasets generated successfully!")
+print("Dirty datasets saved as CSV and SQL files successfully!")
